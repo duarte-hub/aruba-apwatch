@@ -1,0 +1,9 @@
+{
+  "entity": {
+    "sensor": {
+      "wireless_clients": {
+        "default": "mdi:access-point-network"
+      }
+    }
+  }
+}
