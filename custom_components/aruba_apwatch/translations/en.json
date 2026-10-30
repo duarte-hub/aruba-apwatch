@@ -34,6 +34,26 @@
     "sensor": {
       "wireless_clients": {
         "name": "Wireless clients"
+      },
+      "radio_power": {
+        "name": "{band} transmit power"
+      },
+      "radio_channel": {
+        "name": "{band} channel"
+      },
+      "radio_utilization": {
+        "name": "{band} utilization"
+      }
+    }
+  },
+  "options": {
+    "step": {
+      "init": {
+        "title": "Aruba APWatch options",
+        "description": "How often to poll the AP for client and radio data.",
+        "data": {
+          "scan_interval": "Scan interval (seconds)"
+        }
       }
     }
   }

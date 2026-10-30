@@ -3,6 +3,15 @@
     "sensor": {
       "wireless_clients": {
         "default": "mdi:access-point-network"
+      },
+      "radio_power": {
+        "default": "mdi:signal"
+      },
+      "radio_channel": {
+        "default": "mdi:wifi-marker"
+      },
+      "radio_utilization": {
+        "default": "mdi:gauge"
       }
     }
   }

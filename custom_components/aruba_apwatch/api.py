@@ -15,6 +15,7 @@ from __future__ import annotations
 
 import asyncio
 import logging
+import re
 from dataclasses import dataclass, field
 import xml.etree.ElementTree as ET
 
@@ -42,6 +43,28 @@ class ArubaTable:
     name: str
     headers: list[str] = field(default_factory=list)
     rows: list[dict[str, str]] = field(default_factory=list)
+
+
+@dataclass
+class RadioInfo:
+    """One radio of an AP, from a ``show aps`` row."""
+
+    index: int
+    band: str
+    channel: int
+    power_dbm: int | None
+    utilization: int | None
+
+
+@dataclass
+class ApInfo:
+    """One AP of the cluster, from a ``show aps`` row."""
+
+    serial: str
+    name: str
+    ip: str
+    model: str
+    radios: dict[int, RadioInfo] = field(default_factory=dict)
 
 
 def _parse_xml(text: str) -> ET.Element:
@@ -77,6 +100,56 @@ def parse_client_count(root: ET.Element) -> int:
             except ValueError:
                 break
     raise ArubaApiError("No 'Client List' table in 'show clients' response")
+
+
+_LEADING_INT = re.compile(r"^\s*(-?\d+)")
+
+
+def _leading_int(value: str) -> int | None:
+    """Parse ``100E`` / ``1(good)`` / ``18`` to an int, ``-`` to None."""
+    match = _LEADING_INT.match(value)
+    return int(match.group(1)) if match else None
+
+
+def _radio_band(index: int, channel: int) -> str:
+    # Radio 2 is the 6 GHz radio on tri-radio APs; channel numbers overlap 5 GHz.
+    if index == 2:
+        return "6GHz"
+    return "2.4GHz" if channel <= 14 else "5GHz"
+
+
+def parse_aps(root: ET.Element) -> list[ApInfo]:
+    """Parse the per-AP radio columns of a ``show aps`` response."""
+    for table in parse_tables(root):
+        if not table.name.lower().endswith("access points"):
+            continue
+        aps: list[ApInfo] = []
+        for row in table.rows:
+            serial = row.get("Serial #", "")
+            if not serial:
+                continue
+            ap = ApInfo(
+                serial=serial,
+                name=row.get("Name", serial),
+                ip=row.get("IP Address", ""),
+                model=row.get("Type", "").split("(")[0],
+            )
+            for index in range(3):
+                channel = _leading_int(row.get(f"radio{index} Channel", ""))
+                if channel is None:
+                    continue  # radio not present on this AP
+                ap.radios[index] = RadioInfo(
+                    index=index,
+                    band=_radio_band(index, channel),
+                    channel=channel,
+                    power_dbm=_leading_int(row.get(f"radio{index} Power (dBm)", "")),
+                    utilization=_leading_int(
+                        row.get(f"radio{index} Utilization (%)", "")
+                    ),
+                )
+            aps.append(ap)
+        return aps
+    raise ArubaApiError("No access point table in 'show aps' response")
 
 
 class ArubaInstantClient:
@@ -167,3 +240,6 @@ class ArubaInstantClient:
 
     async def get_client_count(self) -> int:
         return parse_client_count(await self.show("show clients"))
+
+    async def get_aps(self) -> list[ApInfo]:
+        return parse_aps(await self.show("show aps"))
