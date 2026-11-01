@@ -128,6 +128,7 @@ class RadioSensor(CoordinatorEntity[ArubaCoordinator], SensorEntity):
         self._attr_translation_placeholders = {
             "band": ap.radios[radio_index].band.replace("GHz", " GHz")
         }
+        host = f"[{ap.ip}]" if ":" in ap.ip else ap.ip
         self._attr_device_info = DeviceInfo(
             identifiers={(DOMAIN, serial)},
             name=ap.name,
@@ -135,7 +136,9 @@ class RadioSensor(CoordinatorEntity[ArubaCoordinator], SensorEntity):
             model=ap.model,
             serial_number=serial,
             via_device=(DOMAIN, entry.entry_id),
-            configuration_url=f"https://{ap.ip}:{entry.data[CONF_PORT]}",
+            configuration_url=(
+                f"https://{host}:{entry.data[CONF_PORT]}" if ap.ip else None
+            ),
         )
 
     @property

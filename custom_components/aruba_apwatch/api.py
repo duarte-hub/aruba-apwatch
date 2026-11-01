@@ -14,6 +14,7 @@ Protocol (observed from the WebUI's app.js and a live AP):
 from __future__ import annotations
 
 import asyncio
+import ipaddress
 import logging
 import re
 from dataclasses import dataclass, field
@@ -111,6 +112,14 @@ def _leading_int(value: str) -> int | None:
     return int(match.group(1)) if match else None
 
 
+def _valid_ip(value: str) -> str:
+    """Return ``value`` if it is an IP address, else an empty string."""
+    try:
+        return str(ipaddress.ip_address(value.strip()))
+    except ValueError:
+        return ""
+
+
 def _radio_band(index: int, channel: int) -> str:
     # Radio 2 is the 6 GHz radio on tri-radio APs; channel numbers overlap 5 GHz.
     if index == 2:
@@ -131,7 +140,7 @@ def parse_aps(root: ET.Element) -> list[ApInfo]:
             ap = ApInfo(
                 serial=serial,
                 name=row.get("Name", serial),
-                ip=row.get("IP Address", ""),
+                ip=_valid_ip(row.get("IP Address", "")),
                 model=row.get("Type", "").split("(")[0],
             )
             for index in range(3):
