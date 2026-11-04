@@ -1,5 +1,10 @@
 {
   "entity": {
+    "button": {
+      "refresh": {
+        "default": "mdi:refresh"
+      }
+    },
     "sensor": {
       "wireless_clients": {
         "default": "mdi:access-point-network"

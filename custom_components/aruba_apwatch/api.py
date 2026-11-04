@@ -47,6 +47,22 @@ class ArubaTable:
 
 
 @dataclass
+class ClientInfo:
+    """One wireless client, from a ``show clients`` row."""
+
+    mac: str
+    name: str
+    ip: str
+    os: str
+    essid: str
+    ap: str
+    channel: str
+    band: str
+    signal_db: int | None
+    speed_mbps: int | None
+
+
+@dataclass
 class RadioInfo:
     """One radio of an AP, from a ``show aps`` row."""
 
@@ -88,21 +104,6 @@ def parse_tables(root: ET.Element) -> list[ArubaTable]:
     return tables
 
 
-def parse_client_count(root: ET.Element) -> int:
-    """Count wireless clients in a ``show clients`` response."""
-    for table in parse_tables(root):
-        if table.name.lower() == "client list":
-            return len(table.rows)
-    # Some firmwares also emit a summary data item; use it if present.
-    for data in root.iter("data"):
-        if (data.get("name") or "").strip().lower() == "number of clients":
-            try:
-                return int((data.text or "").strip())
-            except ValueError:
-                break
-    raise ArubaApiError("No 'Client List' table in 'show clients' response")
-
-
 _LEADING_INT = re.compile(r"^\s*(-?\d+)")
 
 
@@ -118,6 +119,29 @@ def _valid_ip(value: str) -> str:
         return str(ipaddress.ip_address(value.strip()))
     except ValueError:
         return ""
+
+
+def parse_clients(root: ET.Element) -> list[ClientInfo]:
+    """Parse the ``Client List`` table of a ``show clients`` response."""
+    for table in parse_tables(root):
+        if table.name.lower() != "client list":
+            continue
+        return [
+            ClientInfo(
+                mac=row.get("MAC Address", "").lower(),
+                name=row.get("Name", ""),
+                ip=_valid_ip(row.get("IP Address", "")),
+                os=row.get("OS", ""),
+                essid=row.get("ESSID", ""),
+                ap=row.get("Access Point", ""),
+                channel=row.get("Channel", ""),
+                band=row.get("Type", ""),
+                signal_db=_leading_int(row.get("Signal", "")),
+                speed_mbps=_leading_int(row.get("Speed (mbps)", "")),
+            )
+            for row in table.rows
+        ]
+    raise ArubaApiError("No 'Client List' table in 'show clients' response")
 
 
 def _radio_band(index: int, channel: int) -> str:
@@ -247,8 +271,8 @@ class ArubaInstantClient:
                 raise ArubaApiError(f"'{cmd}' failed: {error}")
         raise ArubaApiError(f"'{cmd}' failed after re-login")
 
-    async def get_client_count(self) -> int:
-        return parse_client_count(await self.show("show clients"))
+    async def get_clients(self) -> list[ClientInfo]:
+        return parse_clients(await self.show("show clients"))
 
     async def get_aps(self) -> list[ApInfo]:
         return parse_aps(await self.show("show aps"))

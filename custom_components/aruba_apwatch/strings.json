@@ -31,6 +31,11 @@
     }
   },
   "entity": {
+    "button": {
+      "refresh": {
+        "name": "Refresh"
+      }
+    },
     "sensor": {
       "wireless_clients": {
         "name": "Wireless clients"

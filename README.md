@@ -7,12 +7,14 @@ Unofficial community project — not affiliated with Aruba / HPE.
 
 ## Features
 
-- [x] `sensor.<ap>_wireless_clients` — number of wireless clients on the Instant cluster
+- [x] `sensor.<ap>_wireless_clients` — number of wireless clients on the Instant cluster,
+  with a `clients` attribute listing each one (name, IP, MAC, OS, SSID, AP, channel,
+  band, signal in dB, speed in Mbps). The list is not written to the recorder.
+- [x] `button.<ap>_refresh` — poll the cluster now instead of waiting for the next interval
 - [x] Per-AP devices, each with per-radio sensors for every band (2.4 / 5 / 6 GHz):
   transmit power (dBm), channel number, and channel utilization (%)
 - [x] Configurable polling: Settings → Devices & Services → Aruba APWatch →
   **Configure** → scan interval (10–3600 s, default 60)
-- [ ] Per-client listing (MAC, IP, SSID, AP, band, signal)
 - [ ] Per-AP / per-SSID breakdown
 
 ## How it works
