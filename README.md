@@ -8,8 +8,8 @@ Unofficial community project — not affiliated with Aruba / HPE.
 ## Features
 
 - [x] `sensor.<ap>_wireless_clients` — number of wireless clients on the Instant cluster,
-  with a `clients` attribute listing each one (name, IP, MAC, OS, SSID, AP, channel,
-  band, signal in dB, speed in Mbps). The list is not written to the recorder.
+  with a `clients` attribute listing each one (name, IP, IPv6, MAC, OS, SSID, AP, channel,
+  band, role, signal in dB and speed in Mbps with Aruba's good/poor rating). The list is not written to the recorder.
 - [x] `button.<ap>_refresh` — poll the cluster now instead of waiting for the next interval
 - [x] Per-AP devices, each with per-radio sensors for every band (2.4 / 5 / 6 GHz):
   transmit power (dBm), channel number, and channel utilization (%)

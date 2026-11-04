@@ -53,13 +53,17 @@ class ClientInfo:
     mac: str
     name: str
     ip: str
+    ipv6: str
     os: str
     essid: str
     ap: str
     channel: str
     band: str
+    role: str
     signal_db: int | None
+    signal_quality: str | None
     speed_mbps: int | None
+    speed_quality: str | None
 
 
 @dataclass
@@ -105,12 +109,19 @@ def parse_tables(root: ET.Element) -> list[ArubaTable]:
 
 
 _LEADING_INT = re.compile(r"^\s*(-?\d+)")
+_QUALITY = re.compile(r"\((\w+)\)\s*$")
 
 
 def _leading_int(value: str) -> int | None:
     """Parse ``100E`` / ``1(good)`` / ``18`` to an int, ``-`` to None."""
     match = _LEADING_INT.match(value)
     return int(match.group(1)) if match else None
+
+
+def _quality(value: str) -> str | None:
+    """Parse the ``good`` / ``poor`` rating from ``42(good)``, else None."""
+    match = _QUALITY.search(value)
+    return match.group(1).lower() if match else None
 
 
 def _valid_ip(value: str) -> str:
@@ -131,13 +142,17 @@ def parse_clients(root: ET.Element) -> list[ClientInfo]:
                 mac=row.get("MAC Address", "").lower(),
                 name=row.get("Name", ""),
                 ip=_valid_ip(row.get("IP Address", "")),
+                ipv6=_valid_ip(row.get("IPv6 Address", "")),
                 os=row.get("OS", ""),
                 essid=row.get("ESSID", ""),
                 ap=row.get("Access Point", ""),
                 channel=row.get("Channel", ""),
                 band=row.get("Type", ""),
+                role=row.get("Role", ""),
                 signal_db=_leading_int(row.get("Signal", "")),
+                signal_quality=_quality(row.get("Signal", "")),
                 speed_mbps=_leading_int(row.get("Speed (mbps)", "")),
+                speed_quality=_quality(row.get("Speed (mbps)", "")),
             )
             for row in table.rows
         ]
